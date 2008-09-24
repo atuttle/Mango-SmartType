@@ -118,17 +118,14 @@
 				Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
     
 ----- ---------------------------------------------------------------------//// --->
-
-
 <cfcomponent displayName="SmartType" output="no" hint="Smartens up typography by replacing text entities with smart, typographical entities.">
 
 	<cffunction name="init" output="false" returntype="any">
 		<cfreturn this />
 	</cffunction>
-	
+
     <cffunction name="SmartType" access="public" output="no" returnType="string"
                 hint="Takes a string and returns it with typographical entities">
-    
         <cfargument name="Text" type="string" required="yes" default=""
                     hint="String on which to perform typographic conversions" />
         <cfargument name="Convert" type="string" required="no" default=""
@@ -136,10 +133,7 @@
                             (q: quotes; d: dashes; e: ellipses;
                              x: multiply sign; w: strip Word cruft;
                              stupefy: remove all smart formatting)" />
-    
-    
         <cfscript>
-    
             // Initialise variables
             var thisTokenType = "";
             var thisTokenLastChar = "";
@@ -166,121 +160,79 @@
             TASKS.word = 0;
             
             if ( ARGUMENTS.Convert.equals("stupefy") ) {
-                
                 TASKS.stupefy = 1;
                 TASKS.word = 1;
-                
             } else {
-               
                 TASKS.quotes     = ARGUMENTS.Convert.indexOf( "q" ) GTE 0
                                     or not ARGUMENTS.Convert.length();       // q - Educate quotes
-                                    
                 TASKS.dashes     = ARGUMENTS.Convert.indexOf( "d" ) GTE 0
                                     or not ARGUMENTS.Convert.length();       // d - Educate dashes
-                                    
                 TASKS.ellipses   = ARGUMENTS.Convert.indexOf( "e" ) GTE 0
                                     or not ARGUMENTS.Convert.length();       // e - Educate ellipses
-                                    
                 TASKS.multiplier = ARGUMENTS.Convert.indexOf( "x" ) GTE 0
                                     or not ARGUMENTS.Convert.length();       // x - Educate multiplication signs
-                                    
                 TASKS.word       = ARGUMENTS.Convert.indexOf( "w" ) GTE 0
                                     or not ARGUMENTS.Convert.length();       // w - Clean up MS Word cruft
-                
             }
-            
-
 
             // Strip MS Word cruft from the string
             if ( TASKS.word )
                 ARGUMENTS.Text = StripMSWord( ARGUMENTS.Text );
-            
-    
+
             // Tokenize the text input.
             // This splits it into an array of tags and text.
             arrTokens = Tokenize( ARGUMENTS.Text );
 
-
-            
             // Set up pattern matcher
             objPattern = CreateObject("java","java.util.regex.Pattern");
-            
-    
+
             // Loop over each token in the array
             for ( i = 1 ; i LTE ArrayLen( arrTokens ) ; i = i + 1 ) {
-      
                 thisTokenType = arrTokens[i][1];
                 thisToken = arrTokens[i][2];
-    
                 // Is it a tag?
                 if ( thisTokenType.equals("tag") ) {
-    
                     // Find what tag it is
                     pattern = objPattern.compile( "/?\w+" );
                     findTag = pattern.matcher( thisToken );
                     findTag.find();
                     thisTagName = findTag.group();
-    
                     // Are we currently in the middle of a tag to skip?
                     if ( curSkipTag.length() ) {
-                        
                         //We are, so look to see if the tag is being closed
                         if ( thisTagName.equals("/" & curSkipTag) ) {
-                            
                             // Skip tag is being closed, so reset curSkipTag variable
                             curSkipTag = "";
-                            
                         }
-                        
                     } else {
-    
                         // We are not in the middle of a skip tag, so check
                         // to see if the current tag is in the skip tag list
                         if ( objPattern.matches( tagsToSkip , thisTagName ) ) {
-    
                             // Yes it is, so set the curSkipTag variable to
                             // the current tag name
                             curSkipTag = thisTagName;
-                            
                         }
-                        
                     }
-                    
                 }
-    
-    
                 // If the current token is a text token, and we are not
                 // in the middle of a skip tag, we can process the text!
                 if ( thisTokenType.equals("text") and not curSkipTag.length() ) {
-    
                     // Remember the last character before processing
                     thisTokenLastChar = thisToken.toString().substring( thisToken.length() );
-    
-    
-                    
                     // Process escaped entities
                     thisToken = ProcessEscapes( thisToken );
-            
                     // Educate dashes
                     if ( TASKS.dashes )
                         thisToken = EducateDashes( thisToken );
-            
                     // Educate ellipses
                     if ( TASKS.ellipses )
                         thisToken = EducateEllipses( thisToken );
-            
                     // Educate multiplication signs
                     if ( TASKS.multiplier )
                         thisToken = EducateMultiplier( thisToken );
-    
-    
-                    
-    
                     // Educate quotes
                     if ( TASKS.quotes ) {
-                        
                         if ( thisToken.equals("'") or thisToken.equals('"') ) {
-        
                             // Special case: single-character ' token
                             if ( thisToken.equals("'") ) {
                                 if (objPattern.matches( "\S", prevTokenLastChar )) {
@@ -289,7 +241,6 @@
                                     thisToken = "&##8216;";
                                 }
                             }
-        
                             // Special case: single-character " token
                             if ( thisToken.equals('"') ) {
                                 if (objPattern.matches( "\S", prevTokenLastChar )) {
@@ -298,124 +249,66 @@
                                     thisToken = "&##8220;";
                                 }
                             }
-        
                         } else {
-        
                             // Normal case
                             thisToken = EducateQuotes( thisToken );
-                            
                         }
-                        
                     }
-
-
                     // Stupefy entities
                     if ( TASKS.stupefy )
                         thisToken = StupefyEntities( thisToken );
-    
-                  
                 }
-    
                 // Add the amended token to the string buffer
                 sb.append( thisToken.toString() );
-    
                 // Remember the last character of this token
                 prevTokenLastChar = thisTokenLastChar;
-    
             }
-    
             // Return the string buffer as a string
             return( sb.toString() );
-    
         </cfscript>
-    
     </cffunction>
-    
-    
-    
-    
-    
+
     <cffunction name="EducateDashes" access="private" output="no" returnType="string"
                 hint="Turns single dashes into en-dashes and double dashes into em dashes">
-        
         <cfargument name="Text" type="string" required="yes" default=""
                     hint="Text string on which to perform conversions" />
-        
-        
         <cfscript>
-
             var temp = ARGUMENTS.Text;
-          
             temp = temp.replaceAll( "(\s)-(\s)" , "$1&##8211;$2" );
             temp = temp.replaceAll( "(\s?)-{2,3}(\s?)" , "$1&##8212;$2" );
-            
             return( temp );
-        
         </cfscript>
-    
     </cffunction>
-    
-    
-    
-    
-    
+
     <cffunction name="EducateEllipses" access="private" output="no" returnType="string"
                 hint="Turns sets of three or four dots (with or without spaces) into an ellipsis entity">
-        
         <cfargument name="Text" type="string" required="yes" default="" 
                     hint="Text string on which to perform conversions" />
-        
-        
         <cfscript>
-
             var temp = ARGUMENTS.Text;
-    
             temp = temp.replaceAll( "(\. ?){2,3}\." , "&##8230;" );
-            
             return( temp );
-        
         </cfscript>
-    
     </cffunction>
-    
-    
-    
-    
-    
+
     <cffunction name="EducateMultiplier" access="private" output="no" returnType="string"
                 hint="Turns an 'x' in between numbers into a multiplication sign entity">
-        
         <cfargument name="Text" type="string" required="yes" default="" 
                     hint="Text string on which to perform conversions" />
-        
-        
         <cfscript>
-
             var temp = ARGUMENTS.Text;
-    
             temp = temp.replaceAll( "(\d ?)x( ?\d)" , "$1&times;$2" );
-            
             return( temp );
-        
         </cfscript>
-    
     </cffunction>
-    
-    
-    
-    
-    
+
     <cffunction name="EducateQuotes" access="private" output="no" returnType="string"
                 hint="Turns quotes and apostrophes into the appropriate smart quotes">
-        
         <cfargument name="Text" type="string" required="yes" default="" 
                     hint="Text string on which to perform conversions" />
-        
-        
         <cfscript>
-
             var temp = ARGUMENTS.Text;
-            
+
             // Special case: quote at start followed by puctuation at a
             // non-word-break is closing quote
             temp = temp.replaceAll( "^""(?=\p{Punct}\B)" , "&##8221;" );
@@ -449,25 +342,15 @@
             // All remaining ' and " should be opening quotes
             temp = temp.replaceAll( """" , "&##8220;" );                    
             temp = temp.replaceAll( "'" , "&##8216;" );
-                               
-            
+
             return( temp );
-        
         </cfscript>
-    
     </cffunction>
-    
-    
-    
-    
-    
+
     <cffunction name="ProcessEscapes" access="private" output="no" returnType="string"
                 hint="Looks for characters escaped with a \ and pre-processes them into entities">
-        
         <cfargument name="Text" type="string" required="yes" default="" 
                     hint="Text string on which to perform conversions" />
-        
-        
         <cfscript>
 
             var temp = ARGUMENTS.Text;
@@ -489,24 +372,14 @@
             temp = temp.replaceAll( "\\x" , "&##120;" );
             
             return( temp );
-        
         </cfscript>
-    
     </cffunction>
-
-
-
-
 
     <cffunction name="StripMSWord" access="private" output="no" returnType="string"
                 hint="Remove all MS Word's 'smart' characters from a string">
-        
         <cfargument name="Text" type="string" required="yes" default="" 
                     hint="Text string from which to remove Word cruft" />
-
-
         <cfscript>
-
             var temp = ARGUMENTS.Text;
 
             temp = temp.replaceAll( chr(8211) , "-" );
@@ -516,24 +389,14 @@
             temp = temp.replaceAll( chr(8230) , "..." );
 
             return( temp );
-
         </cfscript>
-
     </cffunction>
-    
-    
-    
-    
-    
+
     <cffunction name="StupefyEntities" access="private" output="no" returnType="string"
                 hint="Turns smart entities back into plain ASCII">
-        
         <cfargument name="Text" type="string" required="yes" default="" 
                     hint="Text string on which to perform conversions" />
-        
-        
         <cfscript>
-
             var temp = ARGUMENTS.Text;
     
             temp = temp.replaceAll( "&##8211;" , "-" );
@@ -543,24 +406,14 @@
             temp = temp.replaceAll( "&##8230;" , "..." );
             
             return( temp );
-        
         </cfscript>
-    
     </cffunction>
-    
-    
-    
-    
-    
+
     <cffunction name="Tokenize" access="public" output="no" returnType="array"
                 hint="Splits the input text into an array of tags and non-tag text">
-    
         <cfargument name="Text" type="string" required="yes" default="" 
                     hint="Text string to break into tokenized array" />
-    
-    
         <cfscript>
-    
             // Initialise variables
             var arrTokens = ArrayNew(2);
             var intPos = 0;
@@ -568,7 +421,6 @@
             var pattern = "";
             var matcher = "";
 
-    
             // Set up the maximum tag nesting level, and build regular expression
             // to search for tags or comment blocks
             var intNestLevel = 6;
@@ -593,22 +445,18 @@
             
             // Convert the StringBuffer to a string
             regex = regex.toString();
-                        
-
 
             // Initialise the Java Pattern Matcher
             Pattern = CreateObject("java","java.util.regex.Pattern");
             pattern = Pattern.Compile( regex );
             matcher = pattern.Matcher( ARGUMENTS.Text );
-      
-    
+
             // Loop through the matches until we reach the end
             while ( matcher.find() ) {
     
                 // The next tag doesn't start at our current position,
                 // so we've got some non-tag text first
                 if ( matcher.start() GT intPos ) {
-    
                     // It's a text token
                     arrTokens[intIndex][1] = "text";
     
@@ -618,9 +466,7 @@
                     // Increase intIndex by 1, so the tag gets put in the
                     // next row of the array
                     intIndex = intIndex + 1;
-                    
                 }
-
 
                 // Then we get to the tag token...
                 arrTokens[intIndex][1] = "tag";
@@ -633,29 +479,21 @@
     
                 // Increase intIndex by 1, ready for the next token
                 intIndex = intIndex + 1;
-        
             }
-
 
             // No more tags found in the text, so add last bit of the string
             // as a text token if we're not already at the end of the string
             if ( intPos LT ARGUMENTS.Text.length() ) {
-                
                 // It's a text token
                 arrTokens[intIndex][1] = "text";
                 
                 // It spans from the current position to the end of the text
                 arrTokens[intIndex][2] = ARGUMENTS.Text.substring( intPos );
-                
             }
-    
-    
+
             // Return the array of tokens
             return( arrTokens );
-    
         </cfscript>
-      
     </cffunction>
-
 
 </cfcomponent>
