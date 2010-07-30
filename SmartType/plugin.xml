@@ -18,17 +18,21 @@ specific language governing permissions and limitations under the License.
 
 VERSION INFORMATION:
 
-This file is part of SmartType Mango Blog Plugin (0.1).
-
-The version number in parenthesis is in the format versionNumber.subversionRevisionNumber.
+This file is part of SmartType Mango Blog Plugin.
 -->
-<plugin id="com.tuttle.mango.plugins.SmartType" name="SmartType" version="0.1" provider-name="Adam Tuttle @ http://fusiongrokker.com" class="SmartType.Handler">
-	<description><![CDATA[ Adds <a href="http://sebduggan.com/pages/projects/smarttype">SmartType</a> support.<br/>
+<plugin id="com.tuttle.mango.plugins.SmartType" name="SmartType" version="1.0" provider-name="Adam Tuttle @ http://fusiongrokker.com" class="SmartType.Handler">
+	<description><![CDATA[ Uses <a href="http://sebduggan.com/pages/projects/smarttype">SmartType</a> to convert plain ascii characters into their better looking "Smart" equivalents.<br/>
 	<br/>
 	Written by <a href="http://fusiongrokker.com">Adam Tuttle</a><br/>
 	Find the latest version at: <a href="http://fusiongrokker.com/page.cfm/projects">FusionGrokker</a> ]]></description>
 	<requiresVersion match="greaterOrEqual">1.0</requiresVersion>
 	<listens>
+
+		<!-- settings events -->
+		<event name="settingsNav" type="synch" priority="5" />
+		<event name="SmartType-settings" type="synch" priority="5" />
+
+		<!-- content events -->
 		<event name="postGetContent" type="synch" priority="5" />
 		<event name="postGetTitle" type="synch" priority="5" />
 		<event name="pageGetContent" type="synch" priority="5" />
