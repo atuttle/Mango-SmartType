@@ -20,7 +20,7 @@ VERSION INFORMATION:
 
 This file is part of SmartType Mango Blog Plugin.
 -->
-<plugin id="com.tuttle.mango.plugins.SmartType" name="SmartType" version="1.0" provider-name="Adam Tuttle @ http://fusiongrokker.com" class="SmartType.Handler">
+<plugin id="com.tuttle.mango.plugins.SmartType" name="SmartType" version="1.1" provider-name="Adam Tuttle @ http://fusiongrokker.com" class="SmartType.Handler">
 	<description><![CDATA[ Uses <a href="http://sebduggan.com/pages/projects/smarttype">SmartType</a> to convert plain ascii characters into their better looking "Smart" equivalents.<br/>
 	<br/>
 	Written by <a href="http://fusiongrokker.com">Adam Tuttle</a><br/>

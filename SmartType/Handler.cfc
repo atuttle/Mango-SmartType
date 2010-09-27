@@ -84,12 +84,29 @@ This file is part of SmartType Mango Blog Plugin.
 		<!--- all content events fall into this case --->
 		<cfelse>
 			<cfset local.settings = getSetting("charTypes") />
-			<cfset arguments.event.accessObject.title = SmartType.SmartType(arguments.event.accessObject.title, local.settings)/>
+			<cfset arguments.event.accessObject.title = unescapeTitle(SmartType.SmartType(arguments.event.accessObject.title, local.settings))/>
 			<cfset arguments.event.accessObject.content = SmartType.SmartType(arguments.event.accessObject.content, local.settings)/>
 
 		</cfif>
 
 		<cfreturn arguments.event />
+	</cffunction>
+	
+	<cffunction name="unescapeTitle" access="private" output="false" returntype="string">
+		<cfargument name="title" required="true" type="string" />
+		<cfset var test = "" />
+		<cfset var char = "" />
+		
+		<cfloop condition="true">
+			<cfset test = REFind("&##([0-9]+);", arguments.title, 1, true)>
+			<cfif test.len[1] eq 0>
+				<cfbreak />
+			</cfif>
+			<cfset char = mid(arguments.title, test.pos[2], test.len[2]) />
+			<cfset arguments.title = Replace(arguments.title, "&###char#;", chr(char), "all") />
+		</cfloop>
+		
+		<cfreturn arguments.title />
 	</cffunction>
 
 </cfcomponent>
