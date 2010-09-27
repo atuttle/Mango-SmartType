@@ -33,9 +33,9 @@ This file is part of SmartType Mango Blog Plugin.
 		<event name="SmartType-settings" type="synch" priority="5" />
 
 		<!-- content events -->
-		<event name="postGetContent" type="synch" priority="5" />
-		<event name="postGetTitle" type="synch" priority="5" />
-		<event name="pageGetContent" type="synch" priority="5" />
-		<event name="pageGetTitle" type="synch" priority="5" />
+		<event name="postGetContent" type="synch" priority="1" />
+		<event name="postGetTitle" type="synch" priority="1" />
+		<event name="pageGetContent" type="synch" priority="1" />
+		<event name="pageGetTitle" type="synch" priority="1" />
 	</listens>
 </plugin>
